@@ -1,6 +1,7 @@
 import { useStore, type ReactFlowState } from '@xyflow/react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 import { useModelStore } from '../store/useModelStore'
+import { useUiStore } from '../store/useUiStore'
 
 /** Below this zoom level every group is shown condensed (box with summary, bundled dependencies). */
 export const DETAIL_ZOOM = 0.6
@@ -19,7 +20,7 @@ interface Rect {
   h: number
 }
 
-const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
+export const rectOverlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h
 
 function inset(r: Rect, margin: number): Rect {
   return { x: r.x + r.w * margin, y: r.y + r.h * margin, w: r.w * (1 - 2 * margin), h: r.h * (1 - 2 * margin) }
@@ -39,10 +40,17 @@ export function condensedKey(
   for (const g of groups) {
     if (zoom < DETAIL_ZOOM) out.push(g.id)
     else if (g.pinned) continue
-    else if (!overlaps(g.rect, inset(viewport, previous.has(g.id) ? ENTER_MARGIN : LEAVE_MARGIN))) out.push(g.id)
+    else if (!rectOverlaps(g.rect, inset(viewport, previous.has(g.id) ? ENTER_MARGIN : LEAVE_MARGIN))) out.push(g.id)
   }
   return out.sort().join('|')
 }
+
+const rectOf = (n: { internals: { positionAbsolute: { x: number; y: number } }; measured: { width?: number; height?: number }; width?: number; height?: number }): Rect => ({
+  x: n.internals.positionAbsolute.x,
+  y: n.internals.positionAbsolute.y,
+  w: n.measured.width ?? n.width ?? 0,
+  h: n.measured.height ?? n.height ?? 0,
+})
 
 /**
  * Condensed top-level groups for the canvas. Empty when semantic zoom is off and in the simulation view.
@@ -54,6 +62,7 @@ export function useCondensedGroups(): Set<string> {
     const sel = s.nodes.filter((n) => n.selected)
     return sel.length === 1 ? sel[0].id : null
   })
+  const region = useUiStore((s) => s.region)
   const previous = useRef<ReadonlySet<string>>(new Set())
 
   const selector = useCallback(
@@ -70,17 +79,12 @@ export function useCondensedGroups(): Set<string> {
         .filter((n) => n.type === 'area' && !n.parentId)
         .map((n) => ({
           id: n.id,
-          pinned: n.id === pinnedTop,
-          rect: {
-            x: n.internals.positionAbsolute.x,
-            y: n.internals.positionAbsolute.y,
-            w: n.measured.width ?? n.width ?? 0,
-            h: n.measured.height ?? n.height ?? 0,
-          },
+          pinned: n.id === pinnedTop || (region !== null && rectOverlaps(rectOf(n), region)),
+          rect: rectOf(n),
         }))
       return condensedKey(groups, { x: -tx / k, y: -ty / k, w: s.width / k, h: s.height / k }, k, previous.current)
     },
-    [enabled, selectedId],
+    [enabled, selectedId, region],
   )
   const key = useStore(selector)
   const set = useMemo(() => new Set(key ? key.split('|') : []), [key])

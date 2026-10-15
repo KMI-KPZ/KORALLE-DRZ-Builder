@@ -2424,3 +2424,33 @@ select.sim-cell {
   top: 50%;
   left: 50%;
 }
+
+/* Section (Ausschnitt): drawing overlay, outline, nodes outside */
+.region-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  cursor: crosshair;
+}
+.region-draft {
+  position: absolute;
+  border: 1.5px dashed var(--focus);
+  background: color-mix(in srgb, var(--focus) 6%, transparent);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.region-outline {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: dashed var(--focus);
+  border-radius: 6px;
+  pointer-events: none;
+}
+.react-flow__node.is-outside {
+  opacity: 0.1;
+  transition: opacity 0.15s;
+}
+.react-flow__controls-button.is-active {
+  color: var(--focus);
+}

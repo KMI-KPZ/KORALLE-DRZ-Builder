@@ -120,7 +120,7 @@ export function SimulationPanel() {
               </button>
             </div>
           </div>
-          <div style={{ fontSize: 16, fontWeight: 650 }}>Was passiert, wenn …?</div>
+          <div style={{ fontSize: 16, fontWeight: 650 }}>Simulation</div>
           <OfflineHint />
         </div>
         <ChainSection />

@@ -4,7 +4,6 @@ import {
   ConnectionMode,
   Controls,
   MarkerType,
-  MiniMap,
   ReactFlow,
   useReactFlow,
   type Edge,
@@ -33,6 +32,9 @@ import { AreaNode } from './nodes/AreaNode'
 import { ModuleNode } from './nodes/ModuleNode'
 import { fmtDuration } from './sim/format'
 import { SimCanvasBar } from './sim/SimCanvasBar'
+import { DetailMiniMap } from './DetailMiniMap'
+import { nodesInRegion } from './region'
+import { RegionButton, RegionLayer } from './RegionLayer'
 
 const nodeTypes = { module: ModuleNode, area: AreaNode }
 const edgeTypes = { dependency: DependencyEdge, drz: DrzEdge, aggregate: AggregateEdge }
@@ -57,6 +59,7 @@ export function Canvas() {
   const simView = useModelStore((s) => s.view === 'simulation')
   const sim = useSim()
   const condensed = useCondensedGroups()
+  const region = useUiStore((s) => s.region)
   const infoInOverview = useModelStore((s) => s.infoInOverview)
   const { screenToFlowPosition, fitView } = useReactFlow()
 
@@ -93,18 +96,37 @@ export function Canvas() {
 
   // Hide nodes of switched-off categories and the content of collapsed and condensed groups
   // (their dependencies are bundled at the group).
+  // Section drawn on the canvas: nodes that overlap it stay, the rest fades out.
+  const inRegion = useMemo<Set<string> | null>(() => {
+    if (!region) return null
+    const byId = new Map(nodes.map((n) => [n.id, n]))
+    return nodesInRegion(
+      nodes.map((n) => {
+        const p = absolutePosition(n.id, byId)
+        const size = nodeSize(n)
+        return { id: n.id, rect: { x: p.x, y: p.y, w: size.width, h: size.height } }
+      }),
+      region,
+    )
+  }, [nodes, region])
+  const outside = useCallback((id: string) => inRegion !== null && !inRegion.has(id), [inRegion])
+
   const flowNodes = useMemo<AppNode[]>(() => {
     return nodes.map((n) => {
       const cat = findModuleType(n.data.typeId)?.category
       const hidden = representative(n.id) !== n.id || (cat ? !categoryLayers[cat] : false)
-      const className = focus && n.type === 'module' && !focus.has(n.id) ? 'is-faded' : undefined
+      const className = outside(n.id)
+        ? 'is-outside'
+        : focus && n.type === 'module' && !focus.has(n.id)
+          ? 'is-faded'
+          : undefined
       // Condensed group boxes lie above the bundled lines, so lines do not cross through them.
       const zIndex = n.type === 'area' ? (condensed.has(n.id) ? 1 : -1) : n.zIndex
       return n.hidden === hidden && n.className === className && n.zIndex === zIndex
         ? n
         : { ...n, hidden, className, zIndex }
     })
-  }, [nodes, categoryLayers, representative, condensed, focus])
+  }, [nodes, categoryLayers, representative, condensed, focus, outside])
 
   const flowEdges = useMemo<Edge[]>(() => {
     const pairCount = new Map<string, number>()
@@ -130,6 +152,9 @@ export function Canvas() {
     if (simView) for (const f of sim.scenario?.flows ?? []) if (f.blockedTime / parts >= 1) blocked.set(f.id, f.blockedTime / parts)
 
     // Focus: bundles that do not touch the selected module fade like single edges.
+    if (inRegion)
+      for (const b of bundles)
+        if (outside(b.source) || outside(b.target)) Object.assign(b, { markerEnd: undefined, markerStart: undefined, data: { ...b.data!, dimmed: true } })
     if (focus) for (const b of bundles) if (b.source !== selectedKey && b.target !== selectedKey) Object.assign(b, { markerEnd: undefined, markerStart: undefined, data: { ...b.data!, dimmed: true } })
     const result: Edge[] = [...bundles]
     for (const e of visible) {
@@ -149,7 +174,9 @@ export function Canvas() {
           ...e.data!,
           offset: count > 1 ? (i - (count - 1) / 2) * PARALLEL_SPACING : 0,
           hitColor: simView ? (blocked.has(e.id) ? 'var(--status-serious)' : undefined) : pathEdges.get(e.id),
-          dimmed: simView
+          dimmed: outside(e.source) || outside(e.target)
+            ? true
+            : simView
             ? !sim.build.flowIds.has(e.id)
             : focus
               ? e.source !== selectedKey && e.target !== selectedKey
@@ -179,7 +206,7 @@ export function Canvas() {
       }
     }
     return result
-  }, [edges, edgeLayers, analysis, showLabels, hoveredEdgeId, showDrzLinks, nodes, simView, sim, representative, infoInOverview, categoryLayers, focus, selectedKey])
+  }, [edges, edgeLayers, analysis, showLabels, hoveredEdgeId, showDrzLinks, nodes, simView, sim, representative, infoInOverview, categoryLayers, focus, selectedKey, inRegion, outside])
 
   // Entering the simulation view zooms to the simulated chain.
   const chainKey = simView ? [...sim.build.stepIds].sort().join('|') : ''
@@ -326,19 +353,11 @@ export function Canvas() {
         proOptions={{ hideAttribution: false }}
       >
         <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} />
-        <Controls showInteractive={false} position="top-right" />
-        <MiniMap
-          position="bottom-right"
-          style={{ width: 180, height: 120 }}
-          pannable
-          zoomable
-          ariaLabel="Übersichtskarte"
-          nodeClassName={(n) => {
-            const cat = findModuleType((n.data as AppNode['data']).typeId)?.category ?? 'struktur'
-            return n.type === 'area' ? 'minimap-area' : `minimap-${cat}`
-          }}
-          nodeBorderRadius={4}
-        />
+        <Controls showInteractive={false} position="top-right">
+          <RegionButton />
+        </Controls>
+        <DetailMiniMap />
+        <RegionLayer />
         {!analysis && !simView && <ConnectionToolbar />}
         <Legend />
         {analysis && !simView && <AnalysisBar />}
