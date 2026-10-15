@@ -19,7 +19,7 @@ services:
 
   # Simulation endpoints /api/…/simulations/ (engine dev server, standard library only, no database).
   sim:
-    image: python:3.12-alpine
+    image: docker.io/library/python:3.12-alpine
     container_name: koralle-sim
     working_dir: /backend/koralle
     command: ["python", "-m", "apps.simulations.engine.devserver", "--host", "0.0.0.0", "--port", "8000"]
@@ -40,7 +40,7 @@ services:
   # Development: Vite against the local source folder, changes show up immediately.
   dev:
     profiles: ["dev"]
-    image: node:22-alpine
+    image: docker.io/library/node:22-alpine
     working_dir: /app
     command: sh -c "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 5173"
     environment:

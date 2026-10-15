@@ -6,7 +6,7 @@
 #
 # Works with Docker and Podman. Stage 1 builds the static app, stage 2 serves it with nginx.
 
-FROM node:22-alpine AS build
+FROM docker.io/library/node:22-alpine AS build
 WORKDIR /app
 # Install dependencies first so this layer is cached as long as the lockfile does not change.
 COPY package.json package-lock.json ./
@@ -16,7 +16,7 @@ COPY . .
 ARG VITE_API_BASE=
 RUN npm run build
 
-FROM nginx:stable-alpine
+FROM docker.io/library/nginx:stable-alpine
 # The config is a template: the image entrypoint fills in API_UPSTREAM and the local DNS resolver.
 COPY deploy/nginx.conf /etc/nginx/templates/default.conf.template
 RUN rm -f /etc/nginx/conf.d/default.conf
