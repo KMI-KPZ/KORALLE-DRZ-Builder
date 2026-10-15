@@ -12,6 +12,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
+# Path prefix for API calls when served below a sub path, e.g. /builder
+ARG VITE_API_BASE=
 RUN npm run build
 
 FROM nginx:stable-alpine

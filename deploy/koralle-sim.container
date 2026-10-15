@@ -1,0 +1,18 @@
+[Unit]
+Description=KORALLE DRZ Builder simulation engine
+
+[Container]
+Image=docker.io/library/python:3.12-alpine
+ContainerName=koralle-sim
+Volume=@DIR@/backend:/backend:ro
+WorkingDir=/backend/koralle
+Exec=python -m apps.simulations.engine.devserver --host 0.0.0.0 --port 8000
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+Network=koralle-builder.network
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

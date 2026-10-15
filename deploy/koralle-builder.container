@@ -1,0 +1,17 @@
+[Unit]
+Description=KORALLE DRZ Builder frontend
+Wants=koralle-sim.service
+After=koralle-sim.service
+
+[Container]
+Image=localhost/koralle-builder:latest
+ContainerName=koralle-builder
+Environment=API_UPSTREAM=http://koralle-sim:8000
+PublishPort=127.0.0.1:8090:8080
+Network=koralle-builder.network
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
