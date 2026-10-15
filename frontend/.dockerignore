@@ -1,0 +1,13 @@
+# Keep the build context small and platform-neutral: dependencies are installed inside the image.
+node_modules
+dist
+dist-single
+scratch
+.git
+.vscode
+.idea
+*.log
+.env
+.env.*
+Dockerfile
+docker-compose.yml

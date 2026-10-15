@@ -1,0 +1,149 @@
+/*
+ * Layout concept: a workbench. Catalog on the left, the plant as a canvas in
+ * the middle, the inspector on the right. Neutral chrome; colour is reserved
+ * for encoding (module category, dependency type, criticality, readiness).
+ */
+:root {
+  /* surfaces & ink (warm neutral, slight bias towards the coral brand hue) */
+  --bg: #f3f2ef;
+  --canvas: #f7f6f3;
+  --canvas-dot: #d6d4cc;
+  --surface: #fcfcfb;
+  --surface-2: #f0efeb;
+  --surface-3: #e7e5df;
+  --area-fill: rgba(240, 239, 235, 0.72);
+  --area-fill-layer: rgba(252, 252, 251, 0.55);
+  --border: rgba(20, 19, 17, 0.11);
+  --border-strong: #c3c2b7;
+  --ink: #161513;
+  --ink-2: #52514e;
+  --ink-3: #7c7a74;
+  --focus: #2a78d6;
+  --brand: #d9573f;
+  --shadow: 0 1px 2px rgba(20, 19, 17, 0.06), 0 2px 8px rgba(20, 19, 17, 0.05);
+  --shadow-raised: 0 4px 18px rgba(20, 19, 17, 0.14);
+  --backdrop: rgba(20, 19, 17, 0.28);
+
+  /* module categories (validated categorical slots 1–7, fixed order) */
+  --cat-prozess: #2a78d6;
+  --cat-lager: #eb6834;
+  --cat-ressource: #1baf7a;
+  --cat-it: #eda100;
+  --cat-daten: #e87ba4;
+  --cat-team: #008300;
+  --cat-drz: #4a3aa7;
+  --cat-extern: #6f6d67;
+  --cat-struktur: #8a8880;
+
+  /* dependency types */
+  --edge-material: #3b3a36;
+  --edge-information: #2a78d6;
+  --edge-control: #d4541f;
+  --edge-resource: #149565;
+  --edge-drz: #6a5bd0;
+
+  /* status (reserved, always paired with icon + label) */
+  --status-good: #0ca30c;
+  --status-good-ink: #006300;
+  --status-low: #9a988f;
+  --status-warning: #fab219;
+  --status-warning-ink: #8a5a00;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --status-critical-ink: #b22b2b;
+
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Segoe UI Mono', Menlo, Consolas, monospace;
+
+  --radius-s: 5px;
+  --radius-m: 8px;
+  --radius-l: 12px;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #0e0e0d;
+    --canvas: #121211;
+    --canvas-dot: #2f2e2b;
+    --surface: #1a1a19;
+    --surface-2: #222220;
+    --surface-3: #2c2c29;
+    --area-fill: rgba(34, 34, 32, 0.78);
+    --area-fill-layer: rgba(26, 26, 25, 0.55);
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: #3d3d39;
+    --ink: #f4f3ef;
+    --ink-2: #c3c2b7;
+    --ink-3: #95938b;
+    --focus: #5598e7;
+    --brand: #ec7a62;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-raised: 0 6px 22px rgba(0, 0, 0, 0.55);
+    --backdrop: rgba(0, 0, 0, 0.5);
+
+    --cat-prozess: #3987e5;
+    --cat-lager: #d95926;
+    --cat-ressource: #199e70;
+    --cat-it: #c98500;
+    --cat-daten: #d55181;
+    --cat-team: #008300;
+    --cat-drz: #9085e9;
+    --cat-extern: #a3a198;
+    --cat-struktur: #8a8880;
+
+    --edge-material: #d9d8d1;
+    --edge-information: #5598e7;
+    --edge-control: #ef7c4d;
+    --edge-resource: #29b886;
+    --edge-drz: #9d93ee;
+
+    --status-good-ink: #34c234;
+    --status-warning-ink: #f0b43a;
+    --status-critical-ink: #ef6b6b;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #0e0e0d;
+  --canvas: #121211;
+  --canvas-dot: #2f2e2b;
+  --surface: #1a1a19;
+  --surface-2: #222220;
+  --surface-3: #2c2c29;
+  --area-fill: rgba(34, 34, 32, 0.78);
+  --area-fill-layer: rgba(26, 26, 25, 0.55);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: #3d3d39;
+  --ink: #f4f3ef;
+  --ink-2: #c3c2b7;
+  --ink-3: #95938b;
+  --focus: #5598e7;
+  --brand: #ec7a62;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-raised: 0 6px 22px rgba(0, 0, 0, 0.55);
+  --backdrop: rgba(0, 0, 0, 0.5);
+
+  --cat-prozess: #3987e5;
+  --cat-lager: #d95926;
+  --cat-ressource: #199e70;
+  --cat-it: #c98500;
+  --cat-daten: #d55181;
+  --cat-team: #008300;
+  --cat-drz: #9085e9;
+  --cat-extern: #a3a198;
+  --cat-struktur: #8a8880;
+
+  --edge-material: #d9d8d1;
+  --edge-information: #5598e7;
+  --edge-control: #ef7c4d;
+  --edge-resource: #29b886;
+  --edge-drz: #9d93ee;
+
+  --status-good-ink: #34c234;
+  --status-warning-ink: #f0b43a;
+  --status-critical-ink: #ef6b6b;
+  color-scheme: dark;
+}

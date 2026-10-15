@@ -1,0 +1,58 @@
+# KORALLE DRZ Builder
+#
+#   docker compose up --build            → app on http://localhost:8080, simulation service behind /api
+#   PORT=9000 docker compose up --build  → app on http://localhost:9000
+#   docker compose --profile dev up dev  → dev server with live reload on http://localhost:5173
+
+services:
+  app:
+    build: ./frontend
+    image: koralle-frontend:latest
+    container_name: koralle-frontend
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      API_UPSTREAM: http://sim:8000
+    depends_on:
+      - sim
+    restart: unless-stopped
+
+  # Simulation endpoints /api/…/simulations/ (engine dev server, standard library only, no database).
+  sim:
+    image: python:3.12-alpine
+    container_name: koralle-sim
+    working_dir: /backend/koralle
+    command: ["python", "-m", "apps.simulations.engine.devserver", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./backend:/backend:ro
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+    restart: unless-stopped
+
+  # Development: Vite against the local source folder, changes show up immediately.
+  dev:
+    profiles: ["dev"]
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 5173"
+    environment:
+      VITE_USE_POLLING: "true"
+      VITE_API_PROXY: http://sim:8000
+    depends_on:
+      - sim
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - node_modules:/app/node_modules
+
+volumes:
+  node_modules:

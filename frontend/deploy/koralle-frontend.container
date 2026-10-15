@@ -1,0 +1,17 @@
+# systemd quadlet for the URZ VM, in the style of KORALLE-Infrastructure/roles/database.
+# Copy to /etc/containers/systemd/ and run: systemctl daemon-reload && systemctl start koralle-frontend
+[Unit]
+Description=KORALLE frontend (DRZ-Baukasten)
+
+[Container]
+Image=localhost/koralle-frontend:latest
+ContainerName=koralle-frontend
+PublishPort=8080:8080
+# Backend API behind /api/ (simulation engine now, Django later):
+# Environment=API_UPSTREAM=http://host.containers.internal:8000
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
